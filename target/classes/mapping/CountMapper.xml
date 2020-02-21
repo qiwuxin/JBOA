@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.accp.dao.CountMapper">
+
+	<resultMap type="count" id="countMap">
+		<result column="year" property="year" />
+		<result column="month" property="month" />
+		<result column="departmentId" property="departmentId" />
+		<result column="departmentName" property="departmentName" />
+		<result column="money" property="money" />
+		<result column="employeeId" property="employeeId" />
+		<result column="employeeName" property="employeeName" />
+		<result column="moneySUM" property="moneySUM" />
+
+	</resultMap>
+
+	<select id="selectCounts" resultMap="countMap">
+		SELECT
+		e.`employeeId`,
+		e.`employeeName`,
+		e.`departmentId` ,
+		(SELECT
+		SUM(r.totalCount)
+		FROM
+		tb_reimburse r
+		WHERE r.`createMan` = e.`employeeId`
+		AND r.`createTime` LIKE '${date}%' ) money ,
+		(SELECT
+		d.`departmentName` FROM department d
+		WHERE e.`departmentId` = d.`departmentId`) departmentName
+		FROM
+		employee e
+	</select>
+
+	<!-- 查询部门月度报销统计 -->
+	<select id="selectDepartmentMonthCount" resultMap="countMap">
+		SELECT `year`,`month`,departmentName,SUM(money) moneySUM,departmentId
+		FROM `tb_count`
+		<where>
+			<if test="startYear!=null">
+				and `year` =#{startYear}
+			</if>
+			<if test="startMonth!=null">
+				and `month` >=#{startMonth}
+			</if>
+			<if test="endMonth!=null">
+				and `month` &lt;=#{endMonth}
+			</if>
+			<if test="departmentId!=null">
+				and departmentId=#{departmentId}
+			</if>
+		</where>
+		GROUP BY departmentName,`year`,`month`
+		ORDER BY `year` DESC,`month`
+		DESC
+	</select>
+
+	<!-- 查看部门内每个人的月度报销 -->
+	<select id="selectEmployeeMonthCount" resultMap="countMap">
+		SELECT `year`,`month`,employeeName,SUM(money) moneySUM,employeeId
+		FROM `tb_count`
+		<where>
+			<if test="departmentId!=null">
+				and departmentId=#{departmentId}
+			</if>
+			and `year`=#{year} and `month`=#{month}
+		</where>
+		GROUP BY employeeName,`year`,`month`
+		ORDER BY `year` DESC,`month` DESC
+	</select>
+
+	<!-- 年度部门报表 -->
+	<select id="selectDepartmentYearCount" resultMap="countMap">
+		SELECT `year`,departmentName,SUM(money) moneySUM
+		FROM `tb_count`
+		<where>
+			<if test="startYear!=null">
+				and `year` >=#{startYear}
+			</if>
+			<if test="endYear!=null">
+				and `year` &lt;=#{endYear}
+			</if>
+			<if test="departmentId!=null">
+				and departmentId=#{departmentId}
+			</if>
+		</where>
+		GROUP BY departmentName,`year`
+		ORDER BY `year` DESC
+	</select>
+
+	<!-- 查看部门内每个人的年度报销 -->
+	<select id="selectEmployeeYearCount" resultMap="countMap">
+		SELECT employeeId,`year`,employeeName,SUM(money) moneySUM
+		FROM `tb_count`
+		<where>
+			<if test="departmentId!=null">
+				and departmentId=#{departmentId}
+			</if>
+			and `year`=#{year}
+		</where>
+		GROUP BY employeeName,`year`
+		ORDER BY `year` DESC
+	</select>
+
+	<!-- 总年度报表 -->
+	<select id="selectYearCount" resultMap="countMap">
+		SELECT `year`,SUM(money) moneySUM FROM `tb_count`
+		<where>
+			<if test="startYear!=null">
+				and `year`>=#{startYear}
+			</if>
+			<if test="endYear!=null">
+				and `year` &lt;=#{endYear}
+			</if>
+		</where>
+		GROUP BY `year`
+		ORDER BY `year` DESC
+	</select>
+
+	<!-- 总月度报表 -->
+	<select id="selectMonthCount" resultMap="countMap">
+		SELECT `year`,`month`,SUM(money) moneySUM FROM `tb_count`
+		<where>
+			<if test="year!=null">
+				and `year`=#{year}
+			</if>
+			<if test="startMonth!=null">
+				and `month` >=#{startMonth}
+			</if>
+			<if test="endMonth!=null">
+				and `month` >=#{endMonth}
+			</if>
+		</where>
+		GROUP BY `year`,`month`
+		ORDER BY `year` DESC,`month` DESC
+	</select>
+
+	<!-- 添加月度报销单 -->
+	<insert id="insertCount">
+		insert into tb_count values
+		<foreach collection="counts" item="count" separator="," close=";">
+			(0,#{count.money},#{count.year},#{count.month},
+			#{count.departmentId},#{count.employeeId},#{count.departmentName},#{count.employeeName})
+		</foreach>
+	</insert>
+</mapper>

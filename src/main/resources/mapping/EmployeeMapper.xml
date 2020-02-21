@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.accp.dao.EmployeeMapper">
+	<resultMap type="com.accp.VO.EmployeeVO" id="EmployeeMap">
+		<id column="employeeId" property="employeeId"/>
+		<result column="employeeName" property="employeeName"/>
+		<result column="password" property="password"/>
+		<result column="departmentName" property="departmentName"/>
+		<result column="positionName" property="positionName"/>
+		<result column="pid" property="pid"/>
+		<result column="departmentId" property="departmentId"/>
+		<result column="positionId" property="positionId"/>
+	</resultMap>
+
+	<select id="selectEmployee" resultMap="EmployeeMap">
+		SELECT
+		e.`employeeId`,e.`employeeName`,e.`password`,d.`departmentName`,p.`positionName`,e.`pId`,e.`departmentId`,e.`positionId`
+		FROM `employee` e JOIN `position` p ON(e.`positionId`=p.`positionId`)
+		JOIN `department` d ON(e.`departmentId`=d.`departmentId`)
+		WHERE e.`employeeId`=#{id} AND e.`password`=#{password}
+	</select>
+
+</mapper>

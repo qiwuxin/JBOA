@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:task="http://www.springframework.org/schema/task"
+	xmlns:mybatis-spring="http://mybatis.org/schema/mybatis-spring"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.3.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.3.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.3.xsd
+		http://mybatis.org/schema/mybatis-spring http://mybatis.org/schema/mybatis-spring-1.2.xsd
+		http://www.springframework.org/schema/task  
+		http://www.springframework.org/schema/task/spring-task-3.2.xsd">
+		
+		<!-- 定时器 -->
+		<task:annotation-driven/> 
+		<context:component-scan base-package="com.accp.util.MyTestTask" />
+	<!-- 配置基础连接池 -->
+	<bean id="ds" class="org.apache.commons.dbcp.BasicDataSource"
+		destroy-method="close">
+		<property name="driverClassName"
+			value="com.mysql.jdbc.Driver" />
+		<property name="url"
+			value="jdbc:mysql://127.0.0.1:3306/jboa?useUnicode=true&amp;characterEncoding=UTF-8&amp;allowMultiQueries=true" />
+		<property name="username" value="root" />
+		<property name="password" value="" />
+		<property name="defaultAutoCommit" value="false" />
+		<property name="initialSize" value="1" />
+		<property name="maxActive" value="60" />
+		<property name="minIdle" value="1" />
+		<property name="maxIdle" value="60" />
+		<property name="removeAbandoned" value="true" />
+		<property name="removeAbandonedTimeout" value="120" />
+		<property name="logAbandoned" value="true" />
+		<property name="maxWait" value="2000" />
+		<property name="validationQuery" value="select 1" />
+	</bean>
+	
+	<!-- 配置SqlSessionFactory 非常重要 -->
+	<bean id="ssf" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="ds"/>
+		<property name="configLocation" value="classpath:/config.xml"/>
+		<property name="mapperLocations">
+			<list>
+				<value>classpath:/mapping/*.xml</value>
+			</list>
+		</property>
+	</bean>		
+	
+	
+	
+	
+	
+	<!-- dao层 -->
+	<mybatis-spring:scan base-package="com.accp.dao" factory-ref="ssf"/>
+	<!-- biz层 -->
+	<context:component-scan base-package="com.accp.biz" />
+	<context:component-scan base-package="com.accp.util" />
+
+	<!-- 配置事务 -->
+	<bean id="transAsepct" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="ds"/>
+	</bean>
+	<tx:advice id="txAdvice" transaction-manager="transAsepct">
+		<tx:attributes>
+			<tx:method name="add*" propagation="REQUIRED" isolation="READ_COMMITTED"/>
+			<tx:method name="remove*" propagation="REQUIRED" isolation="READ_COMMITTED"/>
+			<tx:method name="modify*" propagation="REQUIRED" isolation="READ_COMMITTED"/>
+			<tx:method name="*" propagation="SUPPORTS" isolation="READ_COMMITTED" read-only="true"/>
+		</tx:attributes>
+	</tx:advice>
+	<aop:config>
+		<aop:advisor advice-ref="txAdvice" pointcut="within(com.accp.biz..*)"/>
+	</aop:config>
+	
+</beans>	

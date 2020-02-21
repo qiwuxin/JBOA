@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.accp.dao.CheckMapper">
+
+<insert id="insertCheck">
+	INSERT INTO tb_check VALUE(0,#{check.bizId},#{check.typeId},now(),
+	#{check.checkMan},#{check.checkResult},#{check.checkComment})
+</insert>
+
+	<!-- 删除报销审核单 -->
+	<!-- <delete id="">
+		delete from tb_check where bizId=#{bizId} and typeId=#{typeId}
+	</delete> -->
+	
+</mapper>

@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.accp.dao.LeaveMapper">
+
+	<resultMap type="com.accp.VO.LeaveVO" id="leaveMap">
+		<id column="leaveId" property="leaveId" />
+		<result column="createName" property="createName" />
+		<result column="positionId" property="positionId" />
+		<result column="departmentName" property="departmentName" />
+		<result column="startTime" property="startTime" />
+		<result column="endTime" property="endTime" />
+		<result column="totalCount" property="totalCount" />
+		<result column="createTime" property="createTime" />
+		<result column="nextDealName" property="nextDealName" />
+		<result column="nextDealMan" property="nextDealMan" />
+		<result column="event" property="event" />
+		<result column="statusName" property="statusName" />
+		<collection property="checks" ofType="check">
+			<result column="checkTime" property="checkTime" />
+			<result column="employeeName" property="employeeName" />
+			<result column="checkResult" property="checkResult" />
+			<result column="checkMan" property="checkMan" />
+			<result column="checkComment" property="checkComment" />
+		</collection>
+	</resultMap>
+
+	<select id="selecLeave" resultMap="leaveMap">
+		SELECT
+		l.`leaveId`,e.`positionId`,
+		(SELECT employeeName FROM employee
+		WHERE employeeId = l.`createMan`)
+		createName,
+		(SELECT departmentName
+		FROM department WHERE l.`departmentId`=departmentId)
+		departmentName,
+		l.`startTime`,l.`endTime`,l.`totalCount`,
+		l.`createTime`,
+		(SELECT
+		employeeName FROM employee WHERE employeeId=l.`nextDealMan`)
+		nextDealName,l.`nextDealMan`,
+		(SELECT resultName FROM check_result
+		WHERE resultId=c.`checkResult`)
+		checkResult,
+		(SELECT statusName FROM
+		tb_status WHERE statusId=l.`statusId` ) statusName,
+		(SELECT
+		employeeName FROM employee WHERE employeeId=c.`checkMan`)
+		checkMan,l.`event`,
+		c.`checkComment`,c.`checkTime`
+		FROM
+		tb_leave l
+
+		LEFT
+		JOIN tb_check c
+		ON (
+		c.`bizId` = l.`leaveId`
+		AND c.`typeId` = l.`typeId`
+		)
+		JOIN employee e
+		ON (e.`employeeId` = l.`createMan`)
+
+		<where>
+			<if test="leaveIds!=null">
+				l.`leaveId` in
+				<foreach collection="leaveIds" open="(" separator="," close=")" item="leaveId">
+					#{leaveId}
+				</foreach>
+			</if>
+		</where>
+		ORDER BY l.`createTime` DESC
+	</select>
+
+	<insert id="insertLeave">
+		insert into tb_leave values
+		(0,1,#{leave.createMan},#{leave.departmentId},now(),#{leave.startTime},
+		#{leave.endTime},#{leave.nextDealMan},#{leave.event},#{leave.totalCount},2)
+	</insert>
+
+	<update id="updateStatus">
+		UPDATE tb_leave SET tb_leave.`statusId`=#{statusId},
+		tb_leave.`nextDealMan`=#{nextDealMan}
+		WHERE
+		tb_leave.`leaveId`=#{leaveId}
+	</update>
+
+	<select id="selectLeaveId" resultMap="leaveMap">
+		SELECT a.`leaveId` FROM (SELECT
+		l.`leaveId`,e.`positionId`,
+		(SELECT employeeName
+		FROM employee
+		WHERE employeeId = l.`createMan`)
+		createName,
+		(SELECT
+		departmentName
+		FROM department WHERE l.`departmentId`=departmentId)
+		departmentName,
+		l.`startTime`,l.`endTime`,l.`totalCount`,
+		l.`createTime`,
+		(SELECT
+		employeeName FROM employee WHERE
+		employeeId=l.`nextDealMan`)
+		nextDealName,l.`nextDealMan`,
+		(SELECT
+		resultName FROM check_result
+		WHERE resultId=c.`checkResult`)
+		checkResult,
+		(SELECT statusName FROM
+		tb_status WHERE
+		statusId=l.`statusId` ) statusName,
+		(SELECT
+		employeeName FROM employee
+		WHERE employeeId=c.`checkMan`)
+		checkMan,l.`event`,
+		c.`checkComment`,c.`checkTime`
+		FROM
+		tb_leave l
+
+		LEFT
+		JOIN tb_check c
+		ON (
+		c.`bizId` = l.`leaveId`
+		AND c.`typeId` = l.`typeId`
+		)
+		JOIN employee e
+		ON
+		(e.`employeeId` = l.`createMan`)
+
+		<where>
+			<if test="startDate!=null">
+				and l.`startTime`>=#{startDate}
+			</if>
+			<if test="endDate!=null">
+				and l.`endTime` &lt;= #{endDate}
+			</if>
+			<if test="grank==2||grank==3||grank==5">
+				<if test="createMan!=null">
+					and e.`employeeId`=#{createMan}
+				</if>
+			</if>
+			<if test="grank==1 ">
+				<if test="option==2">
+					and l.`departmentId`=#{did} AND l.`statusId`&lt;&gt;1 and l.`createMan`&lt;&gt; #{createMan}
+				</if>
+				<if test="option==1">
+					and l.`createMan`=#{createMan}
+				</if>
+			</if>
+			<if test="grank==0">
+				and l.`statusId`&lt;&gt;1 or l.`createMan`=#{createMan}
+			</if>
+			<if test="grank==4">
+				<if test="option==1">
+					and l.`createMan`=#{createMan}
+				</if>
+				<if test="option==2">
+					and c.`checkResult`=2
+				</if>
+			</if>
+		</where>
+		ORDER BY l.`createTime`) a
+		GROUP BY a.`leaveId`
+		ORDER BY a.createTime DESC
+	</select>
+
+</mapper>

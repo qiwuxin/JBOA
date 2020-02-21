@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.accp.dao.ReimburseMapper">
+
+	<!-- 报销单实体 -->
+	<resultMap type="com.accp.VO.ReimburseVO" id="ReimburseVOMap">
+		<id column="reimburseId" property="reimburseId" />
+		<result column="typeId" property="typeId" />
+		<result column="createTime" property="createTime" />
+		<result column="employeeName" property="employeeName" />
+		<result column="employeeId" property="employeeId" />
+		<result column="departmentName" property="departmentName" />
+		<result column="totalCount" property="totalCount" />
+		<result column="positionName" property="positionName" />
+		<result column="statusName" property="statusName" />
+		<result column="nextDealMan" property="nextDealMan" />
+		<result column="event" property="event"/>
+		<collection property="checks" ofType="check">
+			<result column="checkMan" property="checkMan" />
+			<result column="checkTime" property="checkTime" />
+			<result column="checkComment" property="checkComment" />
+			<result column="resultName" property="checkResult" />
+		</collection>
+		<collection property="reims" ofType="reimburseInfo">
+			<result column="desc" property="desc" />
+			<result column="subTotal" property="subTotal" />
+			<result column="picturePath" property="pictureName" />
+		</collection>
+	</resultMap>
+
+	<!-- 查询所有信息 -->
+	<select id="selectReimburseVO" resultMap="ReimburseVOMap">
+		SELECT
+		r.`reimburseId`,r.`createTime`,
+		e.`employeeName`,r.`typeId`,e.`employeeId`,
+		(SELECT `departmentName`
+		FROM `department` d WHERE
+		d.`departmentId`=e.`departmentId`)
+		`departmentName`,
+		r.`totalCount`,
+		(SELECT `employeeName` FROM
+		`employee` WHERE
+		r.nextDealMan=`employeeId`) nextDealMan,
+		(SELECT p.`positionName`
+		FROM `position` p WHERE
+		p.`positionId`=e.`positionId` ) `positionName`,
+		(SELECT `statusName` FROM`tb_status` s WHERE
+		s.`statusId`=r.`statusId`)statusName,
+		(SELECT `employeeName` FROM
+		`employee` WHERE
+		c.`checkMan`=`employeeId`)checkMan
+		,c.`checkTime`,c.`checkComment`,
+		(SELECT `resultName` FROM
+		`check_result` WHERE `resultId`=c.`checkResult`)
+		resultName,r.event,
+		d.`desc`,d.`subTotal`,d.`picturePath`
+		FROM `tb_reimburse` r LEFT JOIN
+		`reimburse_detail` d
+		ON(d.mainId=r.reimburseId)
+		LEFT JOIN tb_check c ON
+		(c.`bizId`=r.reimburseId AND c.`typeId`=2)
+		LEFT JOIN `employee` e ON
+		(e.`employeeId`=r.`createMan`)
+		<where>
+			<if test="rids!=null">
+				<!-- 报销单条件 -->
+				and r.`reimburseId` in
+				<foreach collection="rids" item="rid" open="(" separator=","
+					close=")">
+					#{rid}
+				</foreach>
+			</if>
+		</where>
+		ORDER BY r.`createTime` DESC
+	</select>
+
+	<select id="selectReimburesId" resultMap="ReimburseVOMap">
+		SELECT r.`reimburseId` FROM `tb_reimburse` r JOIN `employee` e
+		ON(r.`createMan`=e.`employeeId`)
+		
+		<where>
+			<if test="statusId!=null">
+				and r.statusId = #{statusId}
+			</if>
+			<if test="grank==0">
+				<if test="option==1">
+					and (r.totalCount>=5000 or e.positionId=1)
+					<if test="statusId==null">
+						and r.`statusId` in (2,3,4,5,6)
+					</if>
+				</if>
+				<if test="option==2">
+					and r.createMan=#{createMan}
+				</if>
+			</if>
+			<if test="grank==1">
+				<if test="option==1">
+					and r.departmentId = #{departmentId}
+					<if test="statusId==null">
+						and r.`statusId` in (2,3,4,5,6)
+					</if>
+				</if>
+				<if test="option==2">
+					and r.createMan=#{createMan}
+				</if>
+			</if>
+			<if test="grank==5">
+				<if test="statusId==null">
+					and r.`statusId` in (4,5)
+				</if>
+			</if>
+			<if test="startDate!=null">
+				and r.createTime>=#{startDate}
+			</if>
+			<if test="endDate!=null">
+				and r.createTime &lt;= #{endDate}
+			</if>
+			<if test="grank==2">
+				and r.createMan=#{createMan}
+			</if>
+		</where>
+		ORDER BY r.`createTime` DESC
+	</select>
+
+	<!-- 财务 -->
+	<select id="selectReimId" resultMap="ReimburseVOMap">
+		SELECT
+		r.`reimburseId`
+		FROM
+		`tb_check` c
+		LEFT JOIN `tb_reimburse` r
+		ON (
+		r.`reimburseId` =
+		c.`bizId`
+		AND r.`typeId` = c.`typeId`
+		)
+		<where>
+			<if test="statusId!=null">
+				and r.`statusId`=#{statusId}
+			</if>
+			<if test="statusId==null">
+				and r.`statusId` in (4,5,3)
+			</if>
+			<if test="createMan!=null">
+				and ( c.`checkMan` = #{createMan} OR
+				r.`nextDealMan`=#{createMan} )
+			</if>
+			<if test="startDate!=null">
+				and r.createTime>=#{startDate}
+			</if>
+			<if test="endDate!=null">
+				and r.createTime &lt;= #{endDate}
+			</if>
+		</where>
+		GROUP BY r.`reimburseId`
+		ORDER BY r.`createTime` DESC
+	</select>
+
+	<!-- 删除报销单 -->
+	<delete id="deleteReimburse">
+		delete from tb_reimburse where
+		reimburseId=#{reimburseId} and statusId=1;
+
+	</delete>
+	<!-- 报销详情表 -->
+	<delete id="deleteReimburseInfo">
+		delete from reimburse_detail where mainId =
+		#{reimburseId};
+	</delete>
+	
+	<!-- 添加报销主表 -->
+	<insert id="insetReim" >
+		insert into tb_reimburse value
+		(0,2,#{reim.createMan},now(),#{reim.departmentId},#{reim.nextDealMan},#{reim.event},
+		#{reim.totalCount},#{reim.statusId});
+	</insert>
+	
+	<!-- 添加报销详表 -->
+	<insert id="insertReimInfo">
+		INSERT INTO `reimburse_detail` VALUES 
+		<foreach collection="reiminfos" item="reiminfo" separator=",">
+			(0,#{reimId},#{reiminfo.subTotal},#{reiminfo.desc},null,#{reiminfo.pictureName})
+		</foreach>
+	</insert>
+	
+	<!-- 查询最后一个报销单 -->
+	<select id="seletReimId" resultType="reimburse">
+		SELECT *FROM `tb_reimburse` ORDER BY reimburseId DESC LIMIT 1
+	</select>
+
+	<!-- 修改报销详情单 -->
+	<update id="updatereims">
+		<foreach collection="reims" item="reim">
+			update `reimburse_detail` set
+			`subTotal`=#{reim.subTotal},
+			`DESC` = #{reim.desc},
+			`pictureName`=#{reim.pictureName}
+			where `id`=#{reim.id} and `mainId`=#{reim.mainId};
+		</foreach>
+	</update>
+	
+	<!-- 修改报销单 -->
+	<update id="updateReimburse">
+		update `tb_reimburse` 
+		<set>
+			<if test="reimburse.nextDealMan!=null">
+				nextDealMan=#{reimburse.nextDealMan},
+			</if>
+			<if test="reimburse.event!=null">
+				event=#{reimburse.event},
+			</if>
+			<if test="reimburse.totalCount!=null">
+				totalCount=#{reimburse.totalCount},
+			</if>
+			<if test="reimburse.statusId!=null">
+				statusId=#{reimburse.statusId},
+			</if>
+			
+		</set>
+		<where>
+			reimburseId=#{reimburse.reimburseId};
+		</where>
+	</update>
+</mapper>
