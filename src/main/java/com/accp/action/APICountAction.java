@@ -1,6 +1,7 @@
 package com.accp.action;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -156,17 +157,19 @@ public class APICountAction {
 	}
 	
 	@PostMapping("counts/excel")
-	public String outExcel(@RequestParam("tbTitles[]")String[] tbTitles,@RequestParam("counts[]")String[] counts,
+	public Map<String, String> outExcel(@RequestParam("tbTitles[]")String[] tbTitles,@RequestParam("counts[]")String[] counts,
 			String fileName) {
 		List<Count> count = new ArrayList<Count>(0);
+		Map<String, String> message = new HashMap<String, String>();
 		for (String string : counts) {
 			count.add(JSON.parseObject(string,Count.class));
 		}
 		if(outExcel.outputStreamExcel(fileName, tbTitles, count)) {
-			return "成功！";
+			message.put("code", "成功！");
 		}else {
-			return "失败！";
+			message.put("code", "失败！");
 		}
+		return message;
 	}
 	
 }

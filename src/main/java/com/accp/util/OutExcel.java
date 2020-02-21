@@ -33,6 +33,7 @@ public class OutExcel {
 			File file = new File(afterFileName+fileName+".xls");
 			
 			if(file.exists()) {
+				System.err.println("删除表格");
 				file.delete();//如果路径中存在该名称的文件则删除
 			}
 			WritableWorkbook wbook = Workbook
@@ -77,7 +78,7 @@ public class OutExcel {
 				Field[] vals = className.getDeclaredFields();	//获取字段
 				for (Field val : vals) {	
 					val.setAccessible(true);	//解除private保护
-					if(val.get(count)!=null) {	//判断字段是否为空
+					if(columnIndex<tbTitles.length&&val.get(count)!=null) {	//判断字段是否为空
 						wsheet.addCell(new Label(columnIndex++, rowIndex, val.get(count).toString(), wcfc));
 					}
 				}

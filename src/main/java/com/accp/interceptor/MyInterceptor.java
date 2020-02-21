@@ -26,6 +26,11 @@ public class MyInterceptor implements HandlerInterceptor {
 	public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
 			throws Exception {
 		System.out.println("开始拦截！");
+		request.setCharacterEncoding("utf-8");  response.setContentType("text/html;charset=utf-8");
+		if(request.getSession().getAttribute("evo")==null) {
+			response.getWriter().print("<script>location.herf='/JBOA/login'</script>");
+			return false;
+		}
 		return true;
 	}
 

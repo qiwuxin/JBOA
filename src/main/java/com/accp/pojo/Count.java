@@ -1,14 +1,14 @@
 package com.accp.pojo;
 
 public class Count {
-	private Integer year;					//年份
-	private Integer month;					//月份
+	private Integer employeeId;				//用户Id
+	private String  employeeName;			//用户名称
 	private Integer departmentId;			//部门Id
 	private String  departmentName;			//部门名称
 	private Float   money;					//金额
-	private Integer employeeId;				//用户Id
-	private String  employeeName;			//用户名称
 	private Float   moneySUM;				//总金额
+	private Integer year;					//年份
+	private Integer month;					//月份
 	public Float getMoneySUM() {
 		return moneySUM;
 	}

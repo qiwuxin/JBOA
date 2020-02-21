@@ -75,9 +75,9 @@
 	
 	<mvc:interceptors>
 		<mvc:interceptor>
-			<mvc:mapping path="/c/**"/>
+			<mvc:mapping path="/api/**"/>
+			<mvc:exclude-mapping path="/JBOA/login"/>
 			<bean class="com.accp.interceptor.MyInterceptor"/>
-			
 		</mvc:interceptor>
 	</mvc:interceptors>
 	</beans>

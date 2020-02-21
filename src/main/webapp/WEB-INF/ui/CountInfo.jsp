@@ -198,15 +198,14 @@
 		}
 		$.ajax("/JBOA/api/person/counts/excel",{
 			type:"post",
-			dataType : "json",
-			dataType:"text",
+			dataType:"json",
 			data : {
 				"counts":items,
 				"fileName":$("#title").text(),
 				"tbTitles":tbTitles
 			},
 			success : function(res) {
-				alert("导出" + res);
+				alert("导出" + res.code);
 			}
 		});
 	}

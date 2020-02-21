@@ -71,7 +71,7 @@
 
 	<!-- 年度部门报表 -->
 	<select id="selectDepartmentYearCount" resultMap="countMap">
-		SELECT `year`,departmentName,SUM(money) moneySUM
+		SELECT departmentId,`year`,departmentName,SUM(money) moneySUM
 		FROM `tb_count`
 		<where>
 			<if test="startYear!=null">
